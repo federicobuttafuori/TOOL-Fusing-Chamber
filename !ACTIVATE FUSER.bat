@@ -16,7 +16,7 @@ echo Generating file list...
 (for %%i in (*.mp4) do @echo file '%%i') > concat.txt
 
 rem Step 3: Prepare the FFmpeg command
-set "output_file=%first_file%_output.mp4"
+set "output_file=%first_file%_(+)_Fused .mp4"
 set "ffmpeg_cmd=ffmpeg -f concat -safe 0 -i concat.txt -c copy "%output_file%""
 
 rem Step 4: Execute FFmpeg command
