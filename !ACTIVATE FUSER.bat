@@ -1,8 +1,10 @@
 @echo off
 setlocal enabledelayedexpansion
 
-rem Script folder (used only for drag-and-drop: concat list + output go here)
+rem Script folder (drag-and-drop: concat list is written here)
 set "FUSER_SCRIPTDIR=%~dp0"
+rem Working directory at launch (shortcut "Avvia in", Explorer, etc.) — output goes here in drag mode
+set "FUSER_STARTDIR=%CD%"
 
 rem Ensure all videos are in the same format and have compatible settings
 rem Folder mode uses the current working directory (shortcut "Avvia in", Explorer folder, etc.)
@@ -31,6 +33,8 @@ rem This will create a file called concat.txt listing all mp4 files in the folde
 echo Generating file list...
 (for %%i in (*.mp4) do @echo file '%%i') > concat.txt
 
+set "FUSER_CONCAT=concat.txt"
+set "FUSER_DRAGMODE=0"
 goto :run_ffmpeg
 
 :from_dragdrop
@@ -85,13 +89,19 @@ if not defined first_file (
     exit /b 1
 )
 
-rem Drag mode: concat.txt is in script dir; run ffmpeg there
-cd /d "%FUSER_SCRIPTDIR%"
+set "FUSER_CONCAT=%FUSER_SCRIPTDIR%concat.txt"
+set "FUSER_DRAGMODE=1"
+rem FUSER_STARTDIR was captured at script start (= cartella "Avvia in" del collegamento)
 
 :run_ffmpeg
 rem Step 3: Prepare the FFmpeg command
 set "output_file=%first_file%_(+)_Fused .mp4"
-set "ffmpeg_cmd=ffmpeg -f concat -safe 0 -i concat.txt -c copy "%output_file%""
+if "!FUSER_DRAGMODE!"=="1" (
+    set "OUTVIDEO=!FUSER_STARTDIR!\!output_file!"
+) else (
+    set "OUTVIDEO=!output_file!"
+)
+set "ffmpeg_cmd=ffmpeg -f concat -safe 0 -i "!FUSER_CONCAT!" -c copy "!OUTVIDEO!""
 
 rem Step 4: Execute FFmpeg command
 echo Running FFmpeg...
@@ -106,7 +116,7 @@ if %ERRORLEVEL% neq 0 (
 
 rem Step 5: Cleanup temporary file
 echo Cleaning up...
-del concat.txt
+del "%FUSER_CONCAT%" 2>nul
 
-echo Done. Output file: %output_file%
+echo Done. Output file: !OUTVIDEO!
 pause
