@@ -1,10 +1,11 @@
 @echo off
 setlocal enabledelayedexpansion
 
-rem Always run from this script's folder (output + concat land here)
-cd /d "%~dp0"
+rem Script folder (used only for drag-and-drop: concat list + output go here)
+set "FUSER_SCRIPTDIR=%~dp0"
 
 rem Ensure all videos are in the same format and have compatible settings
+rem Folder mode uses the current working directory (shortcut "Avvia in", Explorer folder, etc.)
 
 rem ---------------------------------------------------------------------------
 rem Mode A: files dragged onto this .bat — fuse them in drop order
@@ -61,7 +62,7 @@ for %%A in ("%FUSER_PLIST%") do if %%~zA equ 0 (
     exit /b 1
 )
 
-set "FUSER_OUT=%~dp0concat.txt"
+set "FUSER_OUT=%FUSER_SCRIPTDIR%concat.txt"
 echo Generating file list from file trascinati...
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$plist = $env:FUSER_PLIST; $out = $env:FUSER_OUT; " ^
@@ -83,6 +84,9 @@ if not defined first_file (
     pause
     exit /b 1
 )
+
+rem Drag mode: concat.txt is in script dir; run ffmpeg there
+cd /d "%FUSER_SCRIPTDIR%"
 
 :run_ffmpeg
 rem Step 3: Prepare the FFmpeg command
