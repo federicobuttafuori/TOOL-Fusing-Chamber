@@ -28,10 +28,20 @@ pause
 exit /b 1
 :got_prefix
 
-rem Step 2: Generate the list of input files
+rem Step 2: Generate the list of input files and build output filename
 rem This will create a file called concat.txt listing all mp4 files in the folder
 echo Generating file list...
-(for %%i in (*.mp4) do @echo file '%%i') > concat.txt
+set "output_name="
+set "first_file="
+(for %%i in (*.mp4) do (
+    @echo file '%%i'
+    if not defined first_file (
+        set "first_file=%%~ni"
+        set "output_name=%%~ni"
+    ) else (
+        set "output_name=!output_name!_(+)_%%~ni"
+    )
+)) > concat.txt
 
 set "FUSER_CONCAT=concat.txt"
 set "FUSER_DRAGMODE=0"
@@ -81,6 +91,21 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+
+rem Build output filename from all dragged files
+set "output_name="
+set "first_file="
+for /f "usebackq delims=" %%i in ("%FUSER_PLIST%") do (
+    if exist "%%i" (
+        if not defined first_file (
+            set "first_file=%%~ni"
+            set "output_name=%%~ni"
+        ) else (
+            set "output_name=!output_name!_(+)_%%~ni"
+        )
+    )
+)
+
 del "%FUSER_PLIST%" 2>nul
 
 if not defined first_file (
@@ -95,7 +120,7 @@ rem FUSER_STARTDIR was captured at script start (= cartella "Avvia in" del colle
 
 :run_ffmpeg
 rem Step 3: Prepare the FFmpeg command
-set "output_file=%first_file%_(+)_Fused .mp4"
+set "output_file=!output_name! .mp4"
 if "!FUSER_DRAGMODE!"=="1" (
     set "OUTVIDEO=!FUSER_STARTDIR!\!output_file!"
 ) else (
